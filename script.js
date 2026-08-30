@@ -558,7 +558,8 @@ const questions = [
 let currentQuestion = 0;
 let score = 0;
 
-// Remember the selected answer for every question
+// Stores the selected answer index for each question.
+// Example: selectedAnswers[0] = 3 means the 4th answer was selected for Q1.
 let selectedAnswers = new Array(questions.length).fill(null);
 
 
@@ -576,10 +577,43 @@ const questionText = document.getElementById("question");
 const answersContainer = document.getElementById("answers");
 const progressBar = document.getElementById("progress-bar");
 
-// Use the buttons that already exist in your HTML
-const backButton = document.getElementById("back-btn");
-const nextButton = document.getElementById("next-btn");
 
+// --------------------------------------------------
+// CREATE / FIND NAVIGATION BUTTONS
+// --------------------------------------------------
+
+let backButton = document.getElementById("back-btn");
+let nextButton = document.getElementById("next-btn");
+
+
+// If the buttons don't already exist in HTML,
+// create them automatically.
+if (!backButton || !nextButton) {
+
+    const navigation = document.createElement("div");
+
+    navigation.className = "quiz-navigation";
+
+    backButton = document.createElement("button");
+    backButton.id = "back-btn";
+    backButton.className = "quiz-nav-btn";
+    backButton.textContent = "← Back";
+
+    nextButton = document.createElement("button");
+    nextButton.id = "next-btn";
+    nextButton.className = "quiz-nav-btn";
+    nextButton.textContent = "Next →";
+
+    navigation.appendChild(backButton);
+    navigation.appendChild(nextButton);
+
+    quizScreen.appendChild(navigation);
+}
+
+
+// --------------------------------------------------
+// BUTTON EVENTS
+// --------------------------------------------------
 
 startButton.addEventListener("click", startQuiz);
 restartButton.addEventListener("click", restartQuiz);
@@ -590,15 +624,18 @@ backButton.addEventListener("click", goBack);
 nextButton.addEventListener("click", goNext);
 
 
+// --------------------------------------------------
+// START QUIZ
+// --------------------------------------------------
+
 function startQuiz() {
+
+    homeInfo.classList.add("hidden");
 
     currentQuestion = 0;
     score = 0;
 
-    selectedAnswers =
-        new Array(questions.length).fill(null);
-
-    homeInfo.classList.add("hidden");
+    selectedAnswers = new Array(questions.length).fill(null);
 
     startScreen.classList.add("hidden");
     resultScreen.classList.add("hidden");
@@ -608,6 +645,10 @@ function startQuiz() {
 }
 
 
+// --------------------------------------------------
+// SHOW QUESTION
+// --------------------------------------------------
+
 function showQuestion() {
 
     const current = questions[currentQuestion];
@@ -615,8 +656,7 @@ function showQuestion() {
     questionNumber.textContent =
         `Question ${currentQuestion + 1} of ${questions.length}`;
 
-    questionText.textContent =
-        current.question;
+    questionText.textContent = current.question;
 
     answersContainer.innerHTML = "";
 
@@ -624,26 +664,28 @@ function showQuestion() {
     const progress =
         ((currentQuestion + 1) / questions.length) * 100;
 
-    progressBar.style.width =
-        `${progress}%`;
+    progressBar.style.width = `${progress}%`;
 
+
+    // ----------------------------------------------
+    // CREATE ANSWERS
+    // ----------------------------------------------
 
     current.answers.forEach((answer, index) => {
 
-        const button =
-            document.createElement("button");
+        const button = document.createElement("button");
 
         button.className = "answer";
 
-        button.textContent =
-            answer[0];
+        button.textContent = answer[0];
 
 
-        // Restore selected answer
-        if (
-            selectedAnswers[currentQuestion] === index
-        ) {
+        // If this answer was previously selected,
+        // show it as selected.
+        if (selectedAnswers[currentQuestion] === index) {
+
             button.classList.add("selected");
+
         }
 
 
@@ -659,129 +701,142 @@ function showQuestion() {
     });
 
 
+    // ----------------------------------------------
+    // NAVIGATION
+    // ----------------------------------------------
+
     updateNavigation();
 }
 
 
+// --------------------------------------------------
+// SELECT ANSWER
+// --------------------------------------------------
+
 function selectAnswer(answerIndex) {
 
-    // Save the selected answer
-    selectedAnswers[currentQuestion] =
-        answerIndex;
+    // If an answer was already selected,
+    // remove its points first.
+    const previousIndex = selectedAnswers[currentQuestion];
 
+    if (previousIndex !== null) {
 
-    // Automatically go to the next question
-    if (
-        currentQuestion < questions.length - 1
-    ) {
-
-        currentQuestion++;
-
-        showQuestion();
-
-    } else {
-
-        // Last question
-        calculateScore();
-
-        showResult();
+        score -= questions[currentQuestion].answers[previousIndex][1];
 
     }
+
+
+    // Save new selection
+    selectedAnswers[currentQuestion] = answerIndex;
+
+
+    // Add points
+    score += questions[currentQuestion].answers[answerIndex][1];
+
+
+    // Refresh the buttons so selected answer becomes visible.
+    showQuestion();
 }
 
 
-function goBack() {
-
-    if (currentQuestion > 0) {
-
-        currentQuestion--;
-
-        showQuestion();
-
-    }
-}
-
-
-function goNext() {
-
-    // This button is kept as a backup/manual next button.
-    // If an answer hasn't been selected, do nothing.
-
-    if (
-        selectedAnswers[currentQuestion] === null
-    ) {
-        return;
-    }
-
-
-    if (
-        currentQuestion < questions.length - 1
-    ) {
-
-        currentQuestion++;
-
-        showQuestion();
-
-    } else {
-
-        calculateScore();
-
-        showResult();
-
-    }
-}
-
+// --------------------------------------------------
+// UPDATE NAVIGATION BUTTONS
+// --------------------------------------------------
 
 function updateNavigation() {
 
-    // Back button
-    backButton.disabled =
-        currentQuestion === 0;
+    // First question
+    if (currentQuestion === 0) {
 
-
-    // Because selecting an answer automatically moves forward,
-    // Next is only useful as a manual backup.
-    nextButton.disabled =
-        selectedAnswers[currentQuestion] === null;
-
-
-    // Change text on final question
-    if (
-        currentQuestion === questions.length - 1
-    ) {
-
-        nextButton.textContent =
-            "Finish →";
+        backButton.disabled = true;
+        backButton.style.visibility = "hidden";
 
     } else {
 
-        nextButton.textContent =
-            "Next →";
+        backButton.disabled = false;
+        backButton.style.visibility = "visible";
+
+    }
+
+
+    // Last question
+    if (currentQuestion === questions.length - 1) {
+
+        nextButton.textContent = "Finish ✓";
+
+    } else {
+
+        nextButton.textContent = "Next →";
+
+    }
+
+
+    // Don't allow Next until an answer is selected.
+    if (selectedAnswers[currentQuestion] === null) {
+
+        nextButton.disabled = true;
+
+    } else {
+
+        nextButton.disabled = false;
 
     }
 }
 
 
-function calculateScore() {
+// --------------------------------------------------
+// NEXT QUESTION / FINISH
+// --------------------------------------------------
 
-    score = 0;
+function goNext() {
+
+    // Don't continue without selecting an answer.
+    if (selectedAnswers[currentQuestion] === null) {
+
+        return;
+
+    }
 
 
-    selectedAnswers.forEach(
-        (selectedIndex, questionIndex) => {
+    // If this is the final question,
+    // ONLY now show the result.
+    if (currentQuestion === questions.length - 1) {
 
-            if (selectedIndex !== null) {
+        showResult();
 
-                score +=
-                    questions[questionIndex]
-                        .answers[selectedIndex][1];
+        return;
 
-            }
+    }
 
-        }
-    );
+
+    currentQuestion++;
+
+    showQuestion();
 }
 
+
+// --------------------------------------------------
+// BACK
+// --------------------------------------------------
+
+function goBack() {
+
+    if (currentQuestion <= 0) {
+
+        return;
+
+    }
+
+
+    currentQuestion--;
+
+    showQuestion();
+}
+
+
+// --------------------------------------------------
+// SHOW RESULT
+// --------------------------------------------------
 
 function showResult() {
 
@@ -791,8 +846,7 @@ function showResult() {
     resultScreen.classList.remove("hidden");
 
 
-    document.getElementById("final-score").textContent =
-        score;
+    document.getElementById("final-score").textContent = score;
 
 
     let title;
@@ -808,80 +862,78 @@ function showResult() {
         description =
             "Your knowledge of The 100 is still pretty limited. You might want to stay away from Polis until you've done some serious studying.";
 
-        survival =
-            "You'd struggle on the Ground";
+        survival = "You'd struggle on the Ground";
 
         icon = "☠️";
 
+    }
 
-    } else if (score <= 40) {
+    else if (score <= 40) {
 
         title = "🗡️ Grounder Survivor";
 
         description =
             "You know some of the important characters and events, but the world of The 100 still has plenty of surprises left for you.";
 
-        survival =
-            "Survive the early seasons";
+        survival = "Survive the early seasons";
 
         icon = "🗡️";
 
+    }
 
-    } else if (score <= 60) {
+    else if (score <= 60) {
 
         title = "🛡️ Skaikru Survivor";
 
         description =
             "You've got a solid knowledge of The 100. You know the Ark, the Grounders and many of the major events.";
 
-        survival =
-            "Survive most of the series";
+        survival = "Survive most of the series";
 
         icon = "🛡️";
 
+    }
 
-    } else if (score <= 80) {
+    else if (score <= 80) {
 
         title = "🔥 Wonkru Warrior";
 
         description =
             "You know The 100 very well. The major characters, clans, conflicts and events are clearly familiar territory.";
 
-        survival =
-            "Survive the apocalypse";
+        survival = "Survive the apocalypse";
 
         icon = "🔥";
 
+    }
 
-    } else if (score <= 94) {
+    else if (score <= 94) {
 
         title = "👑 Heda";
 
         description =
             "Impressive. Your knowledge of The 100 is strong enough to make you a serious contender for Commander.";
 
-        survival =
-            "Lead the clans";
+        survival = "Lead the clans";
 
         icon = "👑";
 
+    }
 
-    } else {
+    else {
 
         title = "⚔️ Pramheda";
 
         description =
             "You know The 100 inside and out. From the Ark and the Grounders to Sanctum, Bardo and transcendence, almost nothing escaped your memory.";
 
-        survival =
-            "You know everything";
+        survival = "You know everything";
 
         icon = "⚔️";
     }
 
 
-    document.getElementById("result-title").textContent =
-        title;
+    document.getElementById("result-title").textContent = title;
 
     document.getElementById("result-description").textContent =
         description;
@@ -892,19 +944,21 @@ function showResult() {
     document.getElementById("result-icon").textContent =
         icon;
 
-
-    progressBar.style.width =
-        "100%";
+    progressBar.style.width = "100%";
 }
 
+
+// --------------------------------------------------
+// RESTART
+// --------------------------------------------------
 
 function restartQuiz() {
 
     currentQuestion = 0;
     score = 0;
 
-    selectedAnswers =
-        new Array(questions.length).fill(null);
+    selectedAnswers = new Array(questions.length).fill(null);
+
 
     resultScreen.classList.add("hidden");
 
@@ -912,10 +966,13 @@ function restartQuiz() {
 
     homeInfo.classList.remove("hidden");
 
-    progressBar.style.width =
-        "0%";
+    progressBar.style.width = "0%";
 }
 
+
+// --------------------------------------------------
+// SHARE RESULT
+// --------------------------------------------------
 
 async function shareResult() {
 
@@ -942,9 +999,7 @@ async function shareResult() {
 
         text: shareText,
 
-        url:
-            "https://apocalypsequizzes.com/the-100-quiz/"
-
+        url: "https://apocalypsequizzes.com/the-100-quiz/"
     };
 
 
@@ -964,6 +1019,7 @@ async function shareResult() {
             alert(
                 "Your result has been copied! You can paste it anywhere."
             );
+
         }
 
     } catch (error) {
