@@ -558,8 +558,7 @@ const questions = [
 let currentQuestion = 0;
 let score = 0;
 
-// Store the selected answer for every question.
-// null = no answer selected yet.
+// Remember the selected answer for every question
 let selectedAnswers = new Array(questions.length).fill(null);
 
 
@@ -577,22 +576,7 @@ const questionText = document.getElementById("question");
 const answersContainer = document.getElementById("answers");
 const progressBar = document.getElementById("progress-bar");
 
-
-// Create navigation buttons
-const navigationContainer = document.createElement("div");
-
-navigationContainer.className = "quiz-navigation";
-
-navigationContainer.innerHTML = `
-    <button id="back-btn" type="button">← Back</button>
-    <button id="next-btn" type="button">Next →</button>
-`;
-
-
-// Put navigation below the answers
-answersContainer.parentNode.appendChild(navigationContainer);
-
-
+// Use the buttons that already exist in your HTML
 const backButton = document.getElementById("back-btn");
 const nextButton = document.getElementById("next-btn");
 
@@ -608,12 +592,13 @@ nextButton.addEventListener("click", goNext);
 
 function startQuiz() {
 
-    homeInfo.classList.add("hidden");
-
     currentQuestion = 0;
     score = 0;
 
-    selectedAnswers = new Array(questions.length).fill(null);
+    selectedAnswers =
+        new Array(questions.length).fill(null);
+
+    homeInfo.classList.add("hidden");
 
     startScreen.classList.add("hidden");
     resultScreen.classList.add("hidden");
@@ -630,7 +615,8 @@ function showQuestion() {
     questionNumber.textContent =
         `Question ${currentQuestion + 1} of ${questions.length}`;
 
-    questionText.textContent = current.question;
+    questionText.textContent =
+        current.question;
 
     answersContainer.innerHTML = "";
 
@@ -638,115 +624,56 @@ function showQuestion() {
     const progress =
         ((currentQuestion + 1) / questions.length) * 100;
 
-    progressBar.style.width = `${progress}%`;
+    progressBar.style.width =
+        `${progress}%`;
 
 
     current.answers.forEach((answer, index) => {
 
-        const button = document.createElement("button");
+        const button =
+            document.createElement("button");
 
         button.className = "answer";
 
-        button.textContent = answer[0];
+        button.textContent =
+            answer[0];
 
-        // Show previously selected answer
-        if (selectedAnswers[currentQuestion] === index) {
+
+        // Restore selected answer
+        if (
+            selectedAnswers[currentQuestion] === index
+        ) {
             button.classList.add("selected");
         }
 
+
         button.addEventListener("click", () => {
+
             selectAnswer(index);
+
         });
+
 
         answersContainer.appendChild(button);
 
     });
 
 
-    // Re-create navigation buttons because answersContainer
-    // was cleared above.
-    const navigation = document.createElement("div");
-
-    navigation.className = "quiz-navigation";
-
-    navigation.innerHTML = `
-        <button id="back-btn" type="button">
-            ← Back
-        </button>
-
-        <button id="next-btn" type="button">
-            ${
-                currentQuestion === questions.length - 1
-                    ? "Finish →"
-                    : "Next →"
-            }
-        </button>
-    `;
-
-    answersContainer.appendChild(navigation);
-
-
-    // Get the newly created buttons
-    const newBackButton =
-        document.getElementById("back-btn");
-
-    const newNextButton =
-        document.getElementById("next-btn");
-
-
-    newBackButton.addEventListener("click", goBack);
-    newNextButton.addEventListener("click", goNext);
-
-
-    // Disable Back on first question
-    newBackButton.disabled = currentQuestion === 0;
-
-
-    // Next disabled until an answer is selected
-    newNextButton.disabled =
-        selectedAnswers[currentQuestion] === null;
+    updateNavigation();
 }
 
 
 function selectAnswer(answerIndex) {
 
-    // Save selected answer
-    selectedAnswers[currentQuestion] = answerIndex;
+    // Save the selected answer
+    selectedAnswers[currentQuestion] =
+        answerIndex;
 
 
-    // Highlight selected answer
-    const buttons =
-        answersContainer.querySelectorAll(".answer");
-
-    buttons.forEach((button, index) => {
-
-        button.classList.toggle(
-            "selected",
-            index === answerIndex
-        );
-
-    });
-
-
-    // Enable Next
-    const nextButton =
-        document.getElementById("next-btn");
-
-    if (nextButton) {
-        nextButton.disabled = false;
-    }
-}
-
-
-function goNext() {
-
-    // Do not proceed without an answer
-    if (selectedAnswers[currentQuestion] === null) {
-        return;
-    }
-
-
-    if (currentQuestion < questions.length - 1) {
+    // Automatically go to the next question
+    if (
+        currentQuestion < questions.length - 1
+    ) {
 
         currentQuestion++;
 
@@ -754,6 +681,7 @@ function goNext() {
 
     } else {
 
+        // Last question
         calculateScore();
 
         showResult();
@@ -774,21 +702,84 @@ function goBack() {
 }
 
 
+function goNext() {
+
+    // This button is kept as a backup/manual next button.
+    // If an answer hasn't been selected, do nothing.
+
+    if (
+        selectedAnswers[currentQuestion] === null
+    ) {
+        return;
+    }
+
+
+    if (
+        currentQuestion < questions.length - 1
+    ) {
+
+        currentQuestion++;
+
+        showQuestion();
+
+    } else {
+
+        calculateScore();
+
+        showResult();
+
+    }
+}
+
+
+function updateNavigation() {
+
+    // Back button
+    backButton.disabled =
+        currentQuestion === 0;
+
+
+    // Because selecting an answer automatically moves forward,
+    // Next is only useful as a manual backup.
+    nextButton.disabled =
+        selectedAnswers[currentQuestion] === null;
+
+
+    // Change text on final question
+    if (
+        currentQuestion === questions.length - 1
+    ) {
+
+        nextButton.textContent =
+            "Finish →";
+
+    } else {
+
+        nextButton.textContent =
+            "Next →";
+
+    }
+}
+
+
 function calculateScore() {
 
     score = 0;
 
-    selectedAnswers.forEach((selectedIndex, questionIndex) => {
 
-        if (selectedIndex !== null) {
+    selectedAnswers.forEach(
+        (selectedIndex, questionIndex) => {
 
-            score +=
-                questions[questionIndex]
-                    .answers[selectedIndex][1];
+            if (selectedIndex !== null) {
+
+                score +=
+                    questions[questionIndex]
+                        .answers[selectedIndex][1];
+
+            }
 
         }
-
-    });
+    );
 }
 
 
@@ -817,9 +808,11 @@ function showResult() {
         description =
             "Your knowledge of The 100 is still pretty limited. You might want to stay away from Polis until you've done some serious studying.";
 
-        survival = "You'd struggle on the Ground";
+        survival =
+            "You'd struggle on the Ground";
 
         icon = "☠️";
+
 
     } else if (score <= 40) {
 
@@ -828,9 +821,11 @@ function showResult() {
         description =
             "You know some of the important characters and events, but the world of The 100 still has plenty of surprises left for you.";
 
-        survival = "Survive the early seasons";
+        survival =
+            "Survive the early seasons";
 
         icon = "🗡️";
+
 
     } else if (score <= 60) {
 
@@ -839,9 +834,11 @@ function showResult() {
         description =
             "You've got a solid knowledge of The 100. You know the Ark, the Grounders and many of the major events.";
 
-        survival = "Survive most of the series";
+        survival =
+            "Survive most of the series";
 
         icon = "🛡️";
+
 
     } else if (score <= 80) {
 
@@ -850,9 +847,11 @@ function showResult() {
         description =
             "You know The 100 very well. The major characters, clans, conflicts and events are clearly familiar territory.";
 
-        survival = "Survive the apocalypse";
+        survival =
+            "Survive the apocalypse";
 
         icon = "🔥";
+
 
     } else if (score <= 94) {
 
@@ -861,9 +860,11 @@ function showResult() {
         description =
             "Impressive. Your knowledge of The 100 is strong enough to make you a serious contender for Commander.";
 
-        survival = "Lead the clans";
+        survival =
+            "Lead the clans";
 
         icon = "👑";
+
 
     } else {
 
@@ -872,7 +873,8 @@ function showResult() {
         description =
             "You know The 100 inside and out. From the Ark and the Grounders to Sanctum, Bardo and transcendence, almost nothing escaped your memory.";
 
-        survival = "You know everything";
+        survival =
+            "You know everything";
 
         icon = "⚔️";
     }
@@ -891,7 +893,8 @@ function showResult() {
         icon;
 
 
-    progressBar.style.width = "100%";
+    progressBar.style.width =
+        "100%";
 }
 
 
@@ -903,14 +906,14 @@ function restartQuiz() {
     selectedAnswers =
         new Array(questions.length).fill(null);
 
-
     resultScreen.classList.add("hidden");
 
     startScreen.classList.remove("hidden");
 
     homeInfo.classList.remove("hidden");
 
-    progressBar.style.width = "0%";
+    progressBar.style.width =
+        "0%";
 }
 
 
@@ -939,7 +942,8 @@ async function shareResult() {
 
         text: shareText,
 
-        url: "https://apocalypsequizzes.com/the-100-quiz/"
+        url:
+            "https://apocalypsequizzes.com/the-100-quiz/"
 
     };
 
