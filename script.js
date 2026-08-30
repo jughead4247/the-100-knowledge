@@ -595,6 +595,74 @@ function startQuiz() {
 }
 
 
+let currentQuestion = 0;
+let score = 0;
+
+// Store the selected answer for every question.
+// null = no answer selected yet.
+let selectedAnswers = new Array(questions.length).fill(null);
+
+
+const startScreen = document.getElementById("start-screen");
+const quizScreen = document.getElementById("quiz-screen");
+const resultScreen = document.getElementById("result-screen");
+
+const startButton = document.getElementById("start-btn");
+const restartButton = document.getElementById("restart-btn");
+const shareButton = document.getElementById("share-btn");
+const challengeButton = document.getElementById("challenge-btn");
+
+const questionNumber = document.getElementById("question-number");
+const questionText = document.getElementById("question");
+const answersContainer = document.getElementById("answers");
+const progressBar = document.getElementById("progress-bar");
+
+
+// Create navigation buttons
+const navigationContainer = document.createElement("div");
+
+navigationContainer.className = "quiz-navigation";
+
+navigationContainer.innerHTML = `
+    <button id="back-btn" type="button">← Back</button>
+    <button id="next-btn" type="button">Next →</button>
+`;
+
+
+// Put navigation below the answers
+answersContainer.parentNode.appendChild(navigationContainer);
+
+
+const backButton = document.getElementById("back-btn");
+const nextButton = document.getElementById("next-btn");
+
+
+startButton.addEventListener("click", startQuiz);
+restartButton.addEventListener("click", restartQuiz);
+shareButton.addEventListener("click", shareResult);
+challengeButton.addEventListener("click", shareResult);
+
+backButton.addEventListener("click", goBack);
+nextButton.addEventListener("click", goNext);
+
+
+function startQuiz() {
+
+    homeInfo.classList.add("hidden");
+
+    currentQuestion = 0;
+    score = 0;
+
+    selectedAnswers = new Array(questions.length).fill(null);
+
+    startScreen.classList.add("hidden");
+    resultScreen.classList.add("hidden");
+    quizScreen.classList.remove("hidden");
+
+    showQuestion();
+}
+
+
 function showQuestion() {
 
     const current = questions[currentQuestion];
@@ -606,13 +674,14 @@ function showQuestion() {
 
     answersContainer.innerHTML = "";
 
+
     const progress =
         ((currentQuestion + 1) / questions.length) * 100;
 
     progressBar.style.width = `${progress}%`;
 
 
-    current.answers.forEach((answer) => {
+    current.answers.forEach((answer, index) => {
 
         const button = document.createElement("button");
 
@@ -620,31 +689,146 @@ function showQuestion() {
 
         button.textContent = answer[0];
 
+        // Show previously selected answer
+        if (selectedAnswers[currentQuestion] === index) {
+            button.classList.add("selected");
+        }
+
         button.addEventListener("click", () => {
-            selectAnswer(answer[1]);
+            selectAnswer(index);
         });
 
         answersContainer.appendChild(button);
 
     });
+
+
+    // Re-create navigation buttons because answersContainer
+    // was cleared above.
+    const navigation = document.createElement("div");
+
+    navigation.className = "quiz-navigation";
+
+    navigation.innerHTML = `
+        <button id="back-btn" type="button">
+            ← Back
+        </button>
+
+        <button id="next-btn" type="button">
+            ${
+                currentQuestion === questions.length - 1
+                    ? "Finish →"
+                    : "Next →"
+            }
+        </button>
+    `;
+
+    answersContainer.appendChild(navigation);
+
+
+    // Get the newly created buttons
+    const newBackButton =
+        document.getElementById("back-btn");
+
+    const newNextButton =
+        document.getElementById("next-btn");
+
+
+    newBackButton.addEventListener("click", goBack);
+    newNextButton.addEventListener("click", goNext);
+
+
+    // Disable Back on first question
+    newBackButton.disabled = currentQuestion === 0;
+
+
+    // Next disabled until an answer is selected
+    newNextButton.disabled =
+        selectedAnswers[currentQuestion] === null;
 }
 
 
-function selectAnswer(points) {
+function selectAnswer(answerIndex) {
 
-    score += points;
+    // Save selected answer
+    selectedAnswers[currentQuestion] = answerIndex;
 
-    currentQuestion++;
 
-    if (currentQuestion < questions.length) {
+    // Highlight selected answer
+    const buttons =
+        answersContainer.querySelectorAll(".answer");
+
+    buttons.forEach((button, index) => {
+
+        button.classList.toggle(
+            "selected",
+            index === answerIndex
+        );
+
+    });
+
+
+    // Enable Next
+    const nextButton =
+        document.getElementById("next-btn");
+
+    if (nextButton) {
+        nextButton.disabled = false;
+    }
+}
+
+
+function goNext() {
+
+    // Do not proceed without an answer
+    if (selectedAnswers[currentQuestion] === null) {
+        return;
+    }
+
+
+    if (currentQuestion < questions.length - 1) {
+
+        currentQuestion++;
 
         showQuestion();
 
     } else {
 
+        calculateScore();
+
         showResult();
 
     }
+}
+
+
+function goBack() {
+
+    if (currentQuestion > 0) {
+
+        currentQuestion--;
+
+        showQuestion();
+
+    }
+}
+
+
+function calculateScore() {
+
+    score = 0;
+
+    selectedAnswers.forEach((selectedIndex, questionIndex) => {
+
+        if (selectedIndex !== null) {
+
+            score +=
+                questions[questionIndex]
+                    .answers[selectedIndex][1];
+
+        }
+
+    });
 }
 
 
@@ -655,7 +839,9 @@ function showResult() {
     quizScreen.classList.add("hidden");
     resultScreen.classList.remove("hidden");
 
-    document.getElementById("final-score").textContent = score;
+
+    document.getElementById("final-score").textContent =
+        score;
 
 
     let title;
@@ -732,7 +918,8 @@ function showResult() {
     }
 
 
-    document.getElementById("result-title").textContent = title;
+    document.getElementById("result-title").textContent =
+        title;
 
     document.getElementById("result-description").textContent =
         description;
@@ -743,15 +930,25 @@ function showResult() {
     document.getElementById("result-icon").textContent =
         icon;
 
+
     progressBar.style.width = "100%";
 }
 
 
 function restartQuiz() {
 
+    currentQuestion = 0;
+    score = 0;
+
+    selectedAnswers =
+        new Array(questions.length).fill(null);
+
+
     resultScreen.classList.add("hidden");
 
     startScreen.classList.remove("hidden");
+
+    homeInfo.classList.remove("hidden");
 
     progressBar.style.width = "0%";
 }
@@ -783,6 +980,7 @@ async function shareResult() {
         text: shareText,
 
         url: "https://apocalypsequizzes.com/the-100-quiz/"
+
     };
 
 
