@@ -552,7 +552,6 @@ const questions = [
 
 ];
 
-```javascript
 let currentQuestion = 0;
 
 // Stores the selected answer index for every question.
@@ -1224,4 +1223,3 @@ async function shareResult() {
 
     }
 }
-```
