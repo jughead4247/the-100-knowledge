@@ -678,8 +678,7 @@ function showQuestion() {
 
         if (selectedAnswers[currentQuestion] === index) {
 
-            button.classList.add("selected");
-
+            button.classList.add("selected", "selected-answer");
         }
 
 
@@ -741,13 +740,11 @@ function selectAnswer(answerIndex) {
 
     buttons.forEach((button, index) => {
 
-        button.classList.remove("selected");
+        button.classList.remove("selected", "selected-answer");
 
-        if (index === answerIndex) {
-
-            button.classList.add("selected");
-
-        }
+if (index === answerIndex) {
+    button.classList.add("selected", "selected-answer");
+}
 
     });
 
