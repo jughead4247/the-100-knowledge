@@ -553,28 +553,20 @@ const questions = [
 ];
 
 let currentQuestion = 0;
+let score = 0;
 
-// Stores the selected answer index for every question.
-// null = unanswered
+// Remember selected answer for every question
 let selectedAnswers = new Array(questions.length).fill(null);
 
-
-// ===============================
-// ELEMENTS
-// ===============================
 
 const startScreen = document.getElementById("start-screen");
 const quizScreen = document.getElementById("quiz-screen");
 const resultScreen = document.getElementById("result-screen");
-const homeInfo = document.getElementById("home-info");
 
 const startButton = document.getElementById("start-btn");
 const restartButton = document.getElementById("restart-btn");
 const shareButton = document.getElementById("share-btn");
 const challengeButton = document.getElementById("challenge-btn");
-
-const backButton = document.getElementById("back-btn");
-const nextButton = document.getElementById("next-btn");
 
 const questionNumber = document.getElementById("question-number");
 const questionText = document.getElementById("question");
@@ -582,9 +574,41 @@ const answersContainer = document.getElementById("answers");
 const progressBar = document.getElementById("progress-bar");
 
 
-// ===============================
-// BUTTON EVENTS
-// ===============================
+// --------------------------------------------------
+// NAVIGATION BUTTONS
+// --------------------------------------------------
+
+let backButton = document.getElementById("back-btn");
+let nextButton = document.getElementById("next-btn");
+
+
+// Create buttons if they don't exist
+if (!backButton || !nextButton) {
+
+    const navigation = document.createElement("div");
+
+    navigation.className = "quiz-navigation";
+
+    backButton = document.createElement("button");
+    backButton.id = "back-btn";
+    backButton.className = "quiz-nav-btn";
+    backButton.textContent = "← Back";
+
+    nextButton = document.createElement("button");
+    nextButton.id = "next-btn";
+    nextButton.className = "quiz-nav-btn";
+    nextButton.textContent = "Next →";
+
+    navigation.appendChild(backButton);
+    navigation.appendChild(nextButton);
+
+    quizScreen.appendChild(navigation);
+}
+
+
+// --------------------------------------------------
+// EVENTS
+// --------------------------------------------------
 
 startButton.addEventListener("click", startQuiz);
 restartButton.addEventListener("click", restartQuiz);
@@ -595,30 +619,31 @@ backButton.addEventListener("click", goBack);
 nextButton.addEventListener("click", goNext);
 
 
-// ===============================
-// START QUIZ
-// ===============================
+// --------------------------------------------------
+// START
+// --------------------------------------------------
 
 function startQuiz() {
 
-    currentQuestion = 0;
+    homeInfo.classList.add("hidden");
 
-    // Reset all answers
-    selectedAnswers =
-        new Array(questions.length).fill(null);
+    currentQuestion = 0;
+    score = 0;
+
+    selectedAnswers = new Array(questions.length).fill(null);
 
     startScreen.classList.add("hidden");
     resultScreen.classList.add("hidden");
     quizScreen.classList.remove("hidden");
 
-    homeInfo.classList.add("hidden");
-
     showQuestion();
 }
 
-// =============================== 
-// SHOW QUESTION 
-// ===============================
+
+// --------------------------------------------------
+// SHOW QUESTION
+// --------------------------------------------------
+
 function showQuestion() {
 
     const current = questions[currentQuestion];
@@ -626,52 +651,40 @@ function showQuestion() {
     questionNumber.textContent =
         `Question ${currentQuestion + 1} of ${questions.length}`;
 
-    questionText.textContent =
-        current.question;
+    questionText.textContent = current.question;
 
     answersContainer.innerHTML = "";
 
 
-    // Progress
     const progress =
         ((currentQuestion + 1) / questions.length) * 100;
 
-    progressBar.style.width =
-        `${progress}%`;
+    progressBar.style.width = `${progress}%`;
 
 
-    // Create answer buttons
     current.answers.forEach((answer, index) => {
 
-        const button =
-            document.createElement("button");
+        const button = document.createElement("button");
 
         button.className = "answer";
 
-        button.type = "button";
-
-        button.textContent =
-            answer[0];
+        button.textContent = answer[0];
 
 
-        // IMPORTANT:
-        // Restore previously selected answer
-        if (
-            selectedAnswers[currentQuestion] === index
-        ) {
+        // ------------------------------------------
+        // SHOW PREVIOUSLY SELECTED ANSWER
+        // ------------------------------------------
+
+        if (selectedAnswers[currentQuestion] === index) {
 
             button.classList.add("selected");
 
-            // Force visible selected appearance
-            button.style.backgroundColor = "#444";
-            button.style.borderColor = "#ffffff";
-            button.style.color = "#ffffff";
-            button.style.fontWeight = "700";
-            button.style.boxShadow =
-                "0 0 0 2px rgba(255,255,255,0.25)";
-
         }
 
+
+        // ------------------------------------------
+        // ANSWER CLICK
+        // ------------------------------------------
 
         button.addEventListener("click", () => {
 
@@ -689,120 +702,102 @@ function showQuestion() {
 }
 
 
-// ===============================
+// --------------------------------------------------
 // SELECT ANSWER
-// ===============================
+// --------------------------------------------------
 
 function selectAnswer(answerIndex) {
 
+    const previousAnswer =
+        selectedAnswers[currentQuestion];
+
+
+    // If the user changes an already-selected answer,
+    // remove the old score first.
+    if (previousAnswer !== null) {
+
+        score -=
+            questions[currentQuestion].answers[previousAnswer][1];
+
+    }
+
+
     // Save selected answer
-    selectedAnswers[currentQuestion] =
-        answerIndex;
+    selectedAnswers[currentQuestion] = answerIndex;
 
 
-    // Highlight answers
+    // Add new score
+    score +=
+        questions[currentQuestion].answers[answerIndex][1];
+
+
+    // ------------------------------------------
+    // SHOW SELECTED ANSWER IMMEDIATELY
+    // ------------------------------------------
+
     const buttons =
         answersContainer.querySelectorAll(".answer");
 
-
     buttons.forEach((button, index) => {
+
+        button.classList.remove("selected");
 
         if (index === answerIndex) {
 
             button.classList.add("selected");
-
-            button.style.backgroundColor = "#444";
-            button.style.borderColor = "#ffffff";
-            button.style.color = "#ffffff";
-            button.style.fontWeight = "700";
-            button.style.boxShadow =
-                "0 0 0 2px rgba(255,255,255,0.25)";
-
-        } else {
-
-            button.classList.remove("selected");
-
-            button.style.backgroundColor = "";
-            button.style.borderColor = "";
-            button.style.color = "";
-            button.style.fontWeight = "";
-            button.style.boxShadow = "";
 
         }
 
     });
 
 
-    updateNavigation();
+    // ------------------------------------------
+    // FINAL QUESTION
+    // ------------------------------------------
 
+    if (currentQuestion === questions.length - 1) {
 
-    // Automatic advancement
-    if (
-        currentQuestion <
-        questions.length - 1
-    ) {
+        nextButton.textContent = "Finish ✓";
 
-        const questionAtSelection =
-            currentQuestion;
+        nextButton.disabled = false;
 
-
-        setTimeout(() => {
-
-            // Don't advance if user has
-            // already moved elsewhere
-            if (
-                currentQuestion ===
-                    questionAtSelection &&
-
-                selectedAnswers[
-                    questionAtSelection
-                ] === answerIndex
-            ) {
-
-                currentQuestion++;
-
-                showQuestion();
-
-            }
-
-        }, 150);
+        return;
 
     }
+
+
+    // ------------------------------------------
+    // AUTOMATICALLY MOVE FORWARD
+    // ------------------------------------------
+
+    setTimeout(() => {
+
+        currentQuestion++;
+
+        showQuestion();
+
+    }, 250);
 }
 
 
-// ===============================
+// --------------------------------------------------
 // NEXT BUTTON
-// ===============================
+// --------------------------------------------------
 
 function goNext() {
 
-    // Final question = submit
-    if (
-        currentQuestion ===
-        questions.length - 1
-    ) {
-
-        const allAnswered =
-            selectedAnswers.every(
-                answer => answer !== null
-            );
-
-
-        if (allAnswered) {
-
-            showResult();
-
-        }
+    // No answer selected
+    if (selectedAnswers[currentQuestion] === null) {
 
         return;
+
     }
 
 
-    // Don't allow unanswered question
-    if (
-        selectedAnswers[currentQuestion] === null
-    ) {
+    // Final question
+    if (currentQuestion === questions.length - 1) {
+
+        showResult();
 
         return;
 
@@ -815,134 +810,79 @@ function goNext() {
 }
 
 
-// ===============================
+// --------------------------------------------------
 // BACK BUTTON
-// ===============================
+// --------------------------------------------------
 
 function goBack() {
 
-    if (currentQuestion > 0) {
+    if (currentQuestion <= 0) {
 
-        currentQuestion--;
-
-        showQuestion();
+        return;
 
     }
-}
 
 
-// ===============================
-// NAVIGATION
-// ===============================
+    currentQuestion--;
 
-function updateNavigation() {
-
-    const isFirst =
-        currentQuestion === 0;
-
-    const isLast =
-        currentQuestion ===
-        questions.length - 1;
-
-
-    const currentAnswered =
-        selectedAnswers[currentQuestion] !== null;
-
-
-    const allAnswered =
-        selectedAnswers.every(
-            answer => answer !== null
-        );
-
-
-    // ===============================
-    // BACK
-    // ===============================
-
-    backButton.disabled =
-        isFirst;
-
-
-    // ===============================
-    // FINAL QUESTION
-    // ===============================
-
-    if (isLast) {
-
-        nextButton.textContent =
-            "SUBMIT";
-
-
-        nextButton.disabled =
-            !allAnswered;
-
-
-        if (allAnswered) {
-
-            nextButton.classList.add("submit-ready");
-
-        } else {
-
-            nextButton.classList.remove(
-                "submit-ready"
-            );
-
-        }
-
-    } else {
-
-        nextButton.textContent =
-            "Next →";
-
-
-        nextButton.disabled =
-            !currentAnswered;
-
-
-        nextButton.classList.remove(
-            "submit-ready"
-        );
-
-    }
-}
-
-
-// ===============================
-// CALCULATE SCORE
-// ===============================
-
-function calculateScore() {
-
-    let score = 0;
-
-
-    selectedAnswers.forEach(
-        (answerIndex, questionIndex) => {
-
-            if (answerIndex === null) {
-
-                return;
-
-            }
-
-
-            score +=
-                questions[
-                    questionIndex
-                ].answers[
-                    answerIndex
-                ][1];
-
-        }
-    );
-
-
-    return score;
+    showQuestion();
 }
 
 
 // --------------------------------------------------
-// SHOW RESULT
+// NAVIGATION STATE
+// --------------------------------------------------
+
+function updateNavigation() {
+
+    // ------------------------------------------
+    // BACK
+    // ------------------------------------------
+
+    if (currentQuestion === 0) {
+
+        backButton.disabled = true;
+        backButton.style.visibility = "hidden";
+
+    } else {
+
+        backButton.disabled = false;
+        backButton.style.visibility = "visible";
+
+    }
+
+
+    // ------------------------------------------
+    // NEXT / FINISH
+    // ------------------------------------------
+
+    if (currentQuestion === questions.length - 1) {
+
+        nextButton.textContent = "Finish ✓";
+
+    } else {
+
+        nextButton.textContent = "Next →";
+
+    }
+
+
+    // If question has an answer, Next is available.
+    // This is useful when the user comes back to a question.
+    if (selectedAnswers[currentQuestion] !== null) {
+
+        nextButton.disabled = false;
+
+    } else {
+
+        nextButton.disabled = true;
+
+    }
+}
+
+
+// --------------------------------------------------
+// RESULT
 // --------------------------------------------------
 
 function showResult() {
@@ -973,9 +913,7 @@ function showResult() {
 
         icon = "☠️";
 
-    }
-
-    else if (score <= 40) {
+    } else if (score <= 40) {
 
         title = "🗡️ Grounder Survivor";
 
@@ -986,9 +924,7 @@ function showResult() {
 
         icon = "🗡️";
 
-    }
-
-    else if (score <= 60) {
+    } else if (score <= 60) {
 
         title = "🛡️ Skaikru Survivor";
 
@@ -999,9 +935,7 @@ function showResult() {
 
         icon = "🛡️";
 
-    }
-
-    else if (score <= 80) {
+    } else if (score <= 80) {
 
         title = "🔥 Wonkru Warrior";
 
@@ -1012,9 +946,7 @@ function showResult() {
 
         icon = "🔥";
 
-    }
-
-    else if (score <= 94) {
+    } else if (score <= 94) {
 
         title = "👑 Heda";
 
@@ -1025,9 +957,7 @@ function showResult() {
 
         icon = "👑";
 
-    }
-
-    else {
+    } else {
 
         title = "⚔️ Pramheda";
 
@@ -1066,7 +996,6 @@ function restartQuiz() {
 
     selectedAnswers = new Array(questions.length).fill(null);
 
-
     resultScreen.classList.add("hidden");
 
     startScreen.classList.remove("hidden");
@@ -1078,7 +1007,7 @@ function restartQuiz() {
 
 
 // --------------------------------------------------
-// SHARE RESULT
+// SHARE
 // --------------------------------------------------
 
 async function shareResult() {
@@ -1107,6 +1036,7 @@ async function shareResult() {
         text: shareText,
 
         url: "https://apocalypsequizzes.com/the-100-quiz/"
+
     };
 
 
