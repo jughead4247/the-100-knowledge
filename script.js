@@ -552,12 +552,17 @@ const questions = [
 
 ];
 
+```javascript
 let currentQuestion = 0;
-let score = 0;
 
-// Remember selected answer for every question
+// Stores the selected answer index for every question.
+// null = unanswered
 let selectedAnswers = new Array(questions.length).fill(null);
 
+
+// ===============================
+// ELEMENTS
+// ===============================
 
 const startScreen = document.getElementById("start-screen");
 const quizScreen = document.getElementById("quiz-screen");
@@ -569,47 +574,18 @@ const restartButton = document.getElementById("restart-btn");
 const shareButton = document.getElementById("share-btn");
 const challengeButton = document.getElementById("challenge-btn");
 
+const backButton = document.getElementById("back-btn");
+const nextButton = document.getElementById("next-btn");
+
 const questionNumber = document.getElementById("question-number");
 const questionText = document.getElementById("question");
 const answersContainer = document.getElementById("answers");
 const progressBar = document.getElementById("progress-bar");
 
 
-// --------------------------------------------------
-// NAVIGATION BUTTONS
-// --------------------------------------------------
-
-let backButton = document.getElementById("back-btn");
-let nextButton = document.getElementById("next-btn");
-
-
-// Create buttons if they don't exist
-if (!backButton || !nextButton) {
-
-    const navigation = document.createElement("div");
-
-    navigation.className = "quiz-navigation";
-
-    backButton = document.createElement("button");
-    backButton.id = "back-btn";
-    backButton.className = "quiz-nav-btn";
-    backButton.textContent = "← Back";
-
-    nextButton = document.createElement("button");
-    nextButton.id = "next-btn";
-    nextButton.className = "quiz-nav-btn";
-    nextButton.textContent = "Next →";
-
-    navigation.appendChild(backButton);
-    navigation.appendChild(nextButton);
-
-    quizScreen.appendChild(navigation);
-}
-
-
-// --------------------------------------------------
-// EVENTS
-// --------------------------------------------------
+// ===============================
+// BUTTON EVENTS
+// ===============================
 
 startButton.addEventListener("click", startQuiz);
 restartButton.addEventListener("click", restartQuiz);
@@ -620,30 +596,31 @@ backButton.addEventListener("click", goBack);
 nextButton.addEventListener("click", goNext);
 
 
-// --------------------------------------------------
-// START
-// --------------------------------------------------
+// ===============================
+// START QUIZ
+// ===============================
 
 function startQuiz() {
 
-    homeInfo.classList.add("hidden");
-
     currentQuestion = 0;
-    score = 0;
 
-    selectedAnswers = new Array(questions.length).fill(null);
+    // Reset all answers
+    selectedAnswers =
+        new Array(questions.length).fill(null);
 
     startScreen.classList.add("hidden");
     resultScreen.classList.add("hidden");
     quizScreen.classList.remove("hidden");
 
+    homeInfo.classList.add("hidden");
+
     showQuestion();
 }
 
 
-// --------------------------------------------------
+// ===============================
 // SHOW QUESTION
-// --------------------------------------------------
+// ===============================
 
 function showQuestion() {
 
@@ -652,39 +629,53 @@ function showQuestion() {
     questionNumber.textContent =
         `Question ${currentQuestion + 1} of ${questions.length}`;
 
-    questionText.textContent = current.question;
+    questionText.textContent =
+        current.question;
 
     answersContainer.innerHTML = "";
 
 
+    // Progress
     const progress =
         ((currentQuestion + 1) / questions.length) * 100;
 
-    progressBar.style.width = `${progress}%`;
+    progressBar.style.width =
+        `${progress}%`;
 
 
+    // Create answer buttons
     current.answers.forEach((answer, index) => {
 
-        const button = document.createElement("button");
+        const button =
+            document.createElement("button");
 
-       button.className = "answer-btn";
+        button.className = "answer";
 
-        button.textContent = answer[0];
+        button.type = "button";
+
+        button.textContent =
+            answer[0];
 
 
-        // ------------------------------------------
-        // SHOW PREVIOUSLY SELECTED ANSWER
-        // ------------------------------------------
+        // =====================================
+        // RESTORE PREVIOUSLY SELECTED ANSWER
+        // =====================================
 
-        if (selectedAnswers[currentQuestion] === index) {
+        if (
+            selectedAnswers[currentQuestion] === index
+        ) {
 
-            button.classList.add("selected", "selected-answer");
+            button.classList.add("selected");
+
+            // Force selected appearance
+            button.style.backgroundColor = "#444";
+            button.style.borderColor = "#ffffff";
+            button.style.color = "#ffffff";
+            button.style.fontWeight = "700";
+            button.style.boxShadow =
+                "0 0 0 2px rgba(255,255,255,0.25)";
         }
 
-
-        // ------------------------------------------
-        // ANSWER CLICK
-        // ------------------------------------------
 
         button.addEventListener("click", () => {
 
@@ -702,100 +693,125 @@ function showQuestion() {
 }
 
 
-// --------------------------------------------------
+// ===============================
 // SELECT ANSWER
-// --------------------------------------------------
+// ===============================
 
 function selectAnswer(answerIndex) {
 
-    const previousAnswer =
-        selectedAnswers[currentQuestion];
+    // Save answer
+    selectedAnswers[currentQuestion] =
+        answerIndex;
 
 
-    // If the user changes an already-selected answer,
-    // remove the old score first.
-    if (previousAnswer !== null) {
-
-        score -=
-            questions[currentQuestion].answers[previousAnswer][1];
-
-    }
-
-
-    // Save selected answer
-    selectedAnswers[currentQuestion] = answerIndex;
-
-
-    // Add new score
-    score +=
-        questions[currentQuestion].answers[answerIndex][1];
-
-
-    // ------------------------------------------
-    // SHOW SELECTED ANSWER IMMEDIATELY
-    // ------------------------------------------
-
+    // Highlight selected answer immediately
     const buttons =
         answersContainer.querySelectorAll(".answer");
 
+
     buttons.forEach((button, index) => {
 
-        button.classList.remove("selected", "selected-answer");
+        if (index === answerIndex) {
 
-if (index === answerIndex) {
-    button.classList.add("selected", "selected-answer");
-}
+            button.classList.add("selected");
+
+            button.style.backgroundColor = "#444";
+            button.style.borderColor = "#ffffff";
+            button.style.color = "#ffffff";
+            button.style.fontWeight = "700";
+            button.style.boxShadow =
+                "0 0 0 2px rgba(255,255,255,0.25)";
+
+        } else {
+
+            button.classList.remove("selected");
+
+            button.style.backgroundColor = "";
+            button.style.borderColor = "";
+            button.style.color = "";
+            button.style.fontWeight = "";
+            button.style.boxShadow = "";
+
+        }
 
     });
 
 
-    // ------------------------------------------
-    // FINAL QUESTION
-    // ------------------------------------------
+    updateNavigation();
 
-    if (currentQuestion === questions.length - 1) {
 
-        nextButton.textContent = "Finish ✓";
+    // =====================================
+    // AUTOMATICALLY MOVE TO NEXT QUESTION
+    // =====================================
 
-        nextButton.disabled = false;
+    if (
+        currentQuestion <
+        questions.length - 1
+    ) {
 
-        return;
+        const questionAtSelection =
+            currentQuestion;
 
+
+        setTimeout(() => {
+
+            // Only advance if user is still
+            // on the same question
+            if (
+                currentQuestion ===
+                    questionAtSelection &&
+
+                selectedAnswers[
+                    questionAtSelection
+                ] === answerIndex
+            ) {
+
+                currentQuestion++;
+
+                showQuestion();
+
+            }
+
+        }, 150);
     }
-
-
-    // ------------------------------------------
-    // AUTOMATICALLY MOVE FORWARD
-    // ------------------------------------------
-
-    setTimeout(() => {
-
-        currentQuestion++;
-
-        showQuestion();
-
-    }, 250);
 }
 
 
-// --------------------------------------------------
+// ===============================
 // NEXT BUTTON
-// --------------------------------------------------
+// ===============================
 
 function goNext() {
 
-    // No answer selected
-    if (selectedAnswers[currentQuestion] === null) {
+    // =====================================
+    // FINAL QUESTION = SUBMIT
+    // =====================================
+
+    if (
+        currentQuestion ===
+        questions.length - 1
+    ) {
+
+        const allAnswered =
+            selectedAnswers.every(
+                answer => answer !== null
+            );
+
+
+        if (allAnswered) {
+
+            showResult();
+
+        }
 
         return;
-
     }
 
 
-    // Final question
-    if (currentQuestion === questions.length - 1) {
-
-        showResult();
+    // Don't allow unanswered question
+    if (
+        selectedAnswers[currentQuestion] === null
+    ) {
 
         return;
 
@@ -808,90 +824,154 @@ function goNext() {
 }
 
 
-// --------------------------------------------------
+// ===============================
 // BACK BUTTON
-// --------------------------------------------------
+// ===============================
 
 function goBack() {
 
-    if (currentQuestion <= 0) {
+    if (currentQuestion > 0) {
 
-        return;
+        currentQuestion--;
+
+        showQuestion();
 
     }
-
-
-    currentQuestion--;
-
-    showQuestion();
 }
 
 
-// --------------------------------------------------
-// NAVIGATION STATE
-// --------------------------------------------------
+// ===============================
+// UPDATE NAVIGATION
+// ===============================
 
 function updateNavigation() {
 
-    // ------------------------------------------
-    // BACK
-    // ------------------------------------------
+    const isFirst =
+        currentQuestion === 0;
 
-    if (currentQuestion === 0) {
+    const isLast =
+        currentQuestion ===
+        questions.length - 1;
 
-        backButton.disabled = true;
-        backButton.style.visibility = "hidden";
+
+    const currentAnswered =
+        selectedAnswers[currentQuestion] !== null;
+
+
+    const allAnswered =
+        selectedAnswers.every(
+            answer => answer !== null
+        );
+
+
+    // =====================================
+    // BACK BUTTON
+    // =====================================
+
+    backButton.disabled =
+        isFirst;
+
+
+    // =====================================
+    // FINAL QUESTION
+    // =====================================
+
+    if (isLast) {
+
+        nextButton.textContent =
+            "SUBMIT";
+
+
+        nextButton.disabled =
+            !allAnswered;
+
+
+        if (allAnswered) {
+
+            nextButton.classList.add(
+                "submit-ready"
+            );
+
+        } else {
+
+            nextButton.classList.remove(
+                "submit-ready"
+            );
+
+        }
 
     } else {
 
-        backButton.disabled = false;
-        backButton.style.visibility = "visible";
-
-    }
+        nextButton.textContent =
+            "Next →";
 
 
-    // ------------------------------------------
-    // NEXT / FINISH
-    // ------------------------------------------
-
-    if (currentQuestion === questions.length - 1) {
-
-        nextButton.textContent = "Finish ✓";
-
-    } else {
-
-        nextButton.textContent = "Next →";
-
-    }
+        nextButton.disabled =
+            !currentAnswered;
 
 
-    // If question has an answer, Next is available.
-    // This is useful when the user comes back to a question.
-    if (selectedAnswers[currentQuestion] !== null) {
-
-        nextButton.disabled = false;
-
-    } else {
-
-        nextButton.disabled = true;
-
+        nextButton.classList.remove(
+            "submit-ready"
+        );
     }
 }
 
 
-// --------------------------------------------------
-// RESULT
-// --------------------------------------------------
+// ===============================
+// CALCULATE SCORE
+// ===============================
+
+function calculateScore() {
+
+    let score = 0;
+
+
+    selectedAnswers.forEach(
+        (answerIndex, questionIndex) => {
+
+            if (answerIndex === null) {
+
+                return;
+
+            }
+
+
+            score +=
+                questions[
+                    questionIndex
+                ].answers[
+                    answerIndex
+                ][1];
+
+        }
+    );
+
+
+    return score;
+}
+
+
+// ===============================
+// SHOW RESULT
+// ===============================
 
 function showResult() {
+
+    // Calculate score only when submitted
+    const score =
+        calculateScore();
+
 
     homeInfo.classList.remove("hidden");
 
     quizScreen.classList.add("hidden");
+
     resultScreen.classList.remove("hidden");
 
 
-    document.getElementById("final-score").textContent = score;
+    document.getElementById(
+        "final-score"
+    ).textContent = score;
 
 
     let title;
@@ -900,124 +980,197 @@ function showResult() {
     let icon;
 
 
+    // ===============================
+    // RESULT LEVELS
+    // ===============================
+
     if (score <= 20) {
 
-        title = "☠️ Skaikru Casualty";
+        title =
+            "☠️ Skaikru Casualty";
 
         description =
             "Your knowledge of The 100 is still pretty limited. You might want to stay away from Polis until you've done some serious studying.";
 
-        survival = "You'd struggle on the Ground";
+        survival =
+            "You'd struggle on the Ground";
 
-        icon = "☠️";
+        icon =
+            "☠️";
+
 
     } else if (score <= 40) {
 
-        title = "🗡️ Grounder Survivor";
+        title =
+            "🗡️ Grounder Survivor";
 
         description =
             "You know some of the important characters and events, but the world of The 100 still has plenty of surprises left for you.";
 
-        survival = "Survive the early seasons";
+        survival =
+            "Survive the early seasons";
 
-        icon = "🗡️";
+        icon =
+            "🗡️";
+
 
     } else if (score <= 60) {
 
-        title = "🛡️ Skaikru Survivor";
+        title =
+            "🛡️ Skaikru Survivor";
 
         description =
             "You've got a solid knowledge of The 100. You know the Ark, the Grounders and many of the major events.";
 
-        survival = "Survive most of the series";
+        survival =
+            "Survive most of the series";
 
-        icon = "🛡️";
+        icon =
+            "🛡️";
+
 
     } else if (score <= 80) {
 
-        title = "🔥 Wonkru Warrior";
+        title =
+            "🔥 Wonkru Warrior";
 
         description =
             "You know The 100 very well. The major characters, clans, conflicts and events are clearly familiar territory.";
 
-        survival = "Survive the apocalypse";
+        survival =
+            "Survive the apocalypse";
 
-        icon = "🔥";
+        icon =
+            "🔥";
+
 
     } else if (score <= 94) {
 
-        title = "👑 Heda";
+        title =
+            "👑 Heda";
 
         description =
             "Impressive. Your knowledge of The 100 is strong enough to make you a serious contender for Commander.";
 
-        survival = "Lead the clans";
+        survival =
+            "Lead the clans";
 
-        icon = "👑";
+        icon =
+            "👑";
+
 
     } else {
 
-        title = "⚔️ Pramheda";
+        title =
+            "⚔️ Pramheda";
 
         description =
             "You know The 100 inside and out. From the Ark and the Grounders to Sanctum, Bardo and transcendence, almost nothing escaped your memory.";
 
-        survival = "You know everything";
+        survival =
+            "You know everything";
 
-        icon = "⚔️";
+        icon =
+            "⚔️";
     }
 
 
-    document.getElementById("result-title").textContent = title;
+    // ===============================
+    // DISPLAY RESULT
+    // ===============================
 
-    document.getElementById("result-description").textContent =
-        description;
+    document.getElementById(
+        "result-title"
+    ).textContent = title;
 
-    document.getElementById("survival-time").textContent =
-        survival;
 
-    document.getElementById("result-icon").textContent =
-        icon;
+    document.getElementById(
+        "result-description"
+    ).textContent = description;
 
-    progressBar.style.width = "100%";
+
+    document.getElementById(
+        "survival-time"
+    ).textContent = survival;
+
+
+    const resultIcon =
+        document.getElementById("result-icon");
+
+
+    if (resultIcon) {
+
+        resultIcon.textContent =
+            icon;
+
+    }
+
+
+    progressBar.style.width =
+        "100%";
+
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 }
 
 
-// --------------------------------------------------
-// RESTART
-// --------------------------------------------------
+// ===============================
+// RESTART QUIZ
+// ===============================
 
 function restartQuiz() {
 
     currentQuestion = 0;
-    score = 0;
 
-    selectedAnswers = new Array(questions.length).fill(null);
+    selectedAnswers =
+        new Array(questions.length).fill(null);
+
 
     resultScreen.classList.add("hidden");
+
+    quizScreen.classList.add("hidden");
 
     startScreen.classList.remove("hidden");
 
     homeInfo.classList.remove("hidden");
 
-    progressBar.style.width = "0%";
+
+    progressBar.style.width =
+        "0%";
+
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 }
 
 
-// --------------------------------------------------
-// SHARE
-// --------------------------------------------------
+// ===============================
+// SHARE RESULT
+// ===============================
 
 async function shareResult() {
 
     const title =
-        document.getElementById("result-title").textContent;
+        document.getElementById(
+            "result-title"
+        ).textContent;
+
 
     const survival =
-        document.getElementById("survival-time").textContent;
+        document.getElementById(
+            "survival-time"
+        ).textContent;
+
 
     const finalScore =
-        document.getElementById("final-score").textContent;
+        document.getElementById(
+            "final-score"
+        ).textContent;
 
 
     const shareText =
@@ -1029,11 +1182,14 @@ async function shareResult() {
 
     const shareData = {
 
-        title: "How Well Do You Know The 100?",
+        title:
+            "How Well Do You Know The 100?",
 
-        text: shareText,
+        text:
+            shareText,
 
-        url: "https://apocalypsequizzes.com/the-100-quiz/"
+        url:
+            "https://apocalypsequizzes.com/the-100-quiz/"
 
     };
 
@@ -1042,7 +1198,9 @@ async function shareResult() {
 
         if (navigator.share) {
 
-            await navigator.share(shareData);
+            await navigator.share(
+                shareData
+            );
 
         } else {
 
@@ -1050,6 +1208,7 @@ async function shareResult() {
                 shareText +
                 "\n\nhttps://apocalypsequizzes.com/the-100-quiz/"
             );
+
 
             alert(
                 "Your result has been copied! You can paste it anywhere."
@@ -1059,7 +1218,10 @@ async function shareResult() {
 
     } catch (error) {
 
-        console.log("Sharing cancelled.");
+        console.log(
+            "Sharing cancelled."
+        );
 
     }
 }
+```
