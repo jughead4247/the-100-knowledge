@@ -667,7 +667,7 @@ function showQuestion() {
 
         const button = document.createElement("button");
 
-        button.className = "answer";
+       button.className = "answer-btn";
 
         button.textContent = answer[0];
 
