@@ -655,55 +655,6 @@ h2 {
 }
 
 
-/* FOOTER */
-
-.site-footer {
-    margin-top: 0;
-
-    padding: 12px 20px;
-
-    background: #080808;
-
-    color: #ffffff;
-
-    border-top: 1px solid #292929;
-}
-
-
-.footer-links {
-    display: flex;
-
-    justify-content: center;
-
-    flex-wrap: wrap;
-
-    gap: 18px;
-}
-
-
-.site-footer a {
-    color: #777;
-
-    text-decoration: none;
-}
-
-
-.site-footer a:hover {
-    color: #ccc;
-
-    text-decoration: underline;
-}
-
-
-.copyright {
-    margin-top: 12px;
-
-    text-align: center;
-
-    color: #555;
-
-    font-size: 11px;
-}
 
 
 /* MOBILE */
