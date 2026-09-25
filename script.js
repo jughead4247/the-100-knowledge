@@ -575,6 +575,7 @@ const challengeButton = document.getElementById("challenge-btn");
 
 const backButton = document.getElementById("back-btn");
 const nextButton = document.getElementById("next-btn");
+const submitButton = document.getElementById("submit-btn");
 
 const questionNumber = document.getElementById("question-number");
 const questionText = document.getElementById("question");
@@ -594,6 +595,10 @@ challengeButton.addEventListener("click", shareResult);
 backButton.addEventListener("click", goBack);
 nextButton.addEventListener("click", goNext);
 
+if (submitButton) {
+    submitButton.addEventListener("click", showResult);
+}
+
 
 // ===============================
 // START QUIZ
@@ -612,6 +617,13 @@ function startQuiz() {
     quizScreen.classList.remove("hidden");
 
     homeInfo.classList.add("hidden");
+
+    const suggestionsCard =
+        document.getElementById("suggestions-card");
+
+    if (suggestionsCard) {
+        suggestionsCard.classList.add("hidden");
+    }
 
     showQuestion();
 }
@@ -634,7 +646,10 @@ function showQuestion() {
     answersContainer.innerHTML = "";
 
 
-    // Progress
+    // ===============================
+    // PROGRESS
+    // ===============================
+
     const progress =
         ((currentQuestion + 1) / questions.length) * 100;
 
@@ -642,7 +657,10 @@ function showQuestion() {
         `${progress}%`;
 
 
-    // Create answer buttons
+    // ===============================
+    // CREATE ANSWER BUTTONS
+    // ===============================
+
     current.answers.forEach((answer, index) => {
 
         const button =
@@ -656,9 +674,9 @@ function showQuestion() {
             answer[0];
 
 
-        // =====================================
-        // RESTORE PREVIOUSLY SELECTED ANSWER
-        // =====================================
+        // ===============================
+        // RESTORE SELECTED ANSWER
+        // ===============================
 
         if (
             selectedAnswers[currentQuestion] === index
@@ -666,7 +684,8 @@ function showQuestion() {
 
             button.classList.add("selected");
 
-            // Force selected appearance
+            // Preserve the strong selected-answer
+            // appearance from the current version.
             button.style.backgroundColor = "#444";
             button.style.borderColor = "#ffffff";
             button.style.color = "#ffffff";
@@ -703,7 +722,10 @@ function selectAnswer(answerIndex) {
         answerIndex;
 
 
-    // Highlight selected answer immediately
+    // ===============================
+    // HIGHLIGHT SELECTED ANSWER
+    // ===============================
+
     const buttons =
         answersContainer.querySelectorAll(".answer");
 
@@ -739,40 +761,38 @@ function selectAnswer(answerIndex) {
     updateNavigation();
 
 
-    // =====================================
-    // AUTOMATICALLY MOVE TO NEXT QUESTION
-    // =====================================
+    // ===============================
+    // AUTOMATICALLY MOVE TO NEXT
+    // ===============================
 
-    if (
-        currentQuestion <
-        questions.length - 1
-    ) {
-
-        const questionAtSelection =
-            currentQuestion;
+    const questionAtSelection =
+        currentQuestion;
 
 
-        setTimeout(() => {
+    setTimeout(() => {
 
-            // Only advance if user is still
-            // on the same question
-            if (
-                currentQuestion ===
-                    questionAtSelection &&
+        // Only advance if the user is still
+        // on the same question and has not
+        // changed the selection.
+        if (
+            currentQuestion ===
+                questionAtSelection &&
 
-                selectedAnswers[
-                    questionAtSelection
-                ] === answerIndex
-            ) {
+            selectedAnswers[
+                questionAtSelection
+            ] === answerIndex &&
 
-                currentQuestion++;
+            currentQuestion <
+                questions.length - 1
+        ) {
 
-                showQuestion();
+            currentQuestion++;
 
-            }
+            showQuestion();
 
-        }, 150);
-    }
+        }
+
+    }, 180);
 }
 
 
@@ -782,9 +802,9 @@ function selectAnswer(answerIndex) {
 
 function goNext() {
 
-    // =====================================
-    // FINAL QUESTION = SUBMIT
-    // =====================================
+    // ===============================
+    // FINAL QUESTION
+    // ===============================
 
     if (
         currentQuestion ===
@@ -863,55 +883,66 @@ function updateNavigation() {
         );
 
 
-    // =====================================
+    // ===============================
     // BACK BUTTON
-    // =====================================
+    // ===============================
 
     backButton.disabled =
         isFirst;
 
 
-    // =====================================
+    // ===============================
     // FINAL QUESTION
-    // =====================================
+    // ===============================
 
     if (isLast) {
 
-        nextButton.textContent =
-            "SUBMIT";
+        if (submitButton) {
 
+            nextButton.classList.add("hidden");
 
-        nextButton.disabled =
-            !allAnswered;
+            submitButton.classList.remove("hidden");
 
+            submitButton.disabled =
+                !allAnswered;
 
-        if (allAnswered) {
+            submitButton.textContent =
+                allAnswered
+                    ? "SUBMIT"
+                    : "Answer All Questions";
+        }
 
-            nextButton.classList.add(
-                "submit-ready"
-            );
+        else {
 
-        } else {
+            // Fallback for an older HTML version
+            // without a separate Submit button.
 
-            nextButton.classList.remove(
-                "submit-ready"
-            );
+            nextButton.classList.remove("hidden");
+
+            nextButton.textContent =
+                "SUBMIT";
+
+            nextButton.disabled =
+                !allAnswered;
 
         }
 
     } else {
 
+        if (submitButton) {
+
+            submitButton.classList.add("hidden");
+
+        }
+
+        nextButton.classList.remove("hidden");
+
         nextButton.textContent =
             "Next →";
-
 
         nextButton.disabled =
             !currentAnswered;
 
-
-        nextButton.classList.remove(
-            "submit-ready"
-        );
     }
 }
 
@@ -919,6 +950,13 @@ function updateNavigation() {
 // ===============================
 // CALCULATE SCORE
 // ===============================
+//
+// The 50-question bank uses:
+// Correct answer = 2 points
+// Maximum = 100 points
+//
+// Therefore the calculated score is
+// already the percentage.
 
 function calculateScore() {
 
@@ -928,19 +966,16 @@ function calculateScore() {
     selectedAnswers.forEach(
         (answerIndex, questionIndex) => {
 
-            if (answerIndex === null) {
+            if (answerIndex !== null) {
 
-                return;
+                score +=
+                    questions[
+                        questionIndex
+                    ].answers[
+                        answerIndex
+                    ][1];
 
             }
-
-
-            score +=
-                questions[
-                    questionIndex
-                ].answers[
-                    answerIndex
-                ][1];
 
         }
     );
@@ -956,9 +991,39 @@ function calculateScore() {
 
 function showResult() {
 
-    // Calculate score only when submitted
+    const correctAnswers =
+        selectedAnswers.filter(
+            (answerIndex, questionIndex) => {
+
+                return (
+                    answerIndex !== null &&
+                    questions[
+                        questionIndex
+                    ].answers[
+                        answerIndex
+                    ][1] === 2
+                );
+
+            }
+        ).length;
+
+
+    const totalQuestions =
+        questions.length;
+
+
+    const incorrectAnswers =
+        totalQuestions -
+        correctAnswers;
+
+
+    // Each correct answer = 2 points.
     const score =
         calculateScore();
+
+
+    const accuracy =
+        score;
 
 
     homeInfo.classList.remove("hidden");
@@ -968,9 +1033,73 @@ function showResult() {
     resultScreen.classList.remove("hidden");
 
 
+    const suggestionsCard =
+        document.getElementById("suggestions-card");
+
+    if (suggestionsCard) {
+
+        suggestionsCard.classList.remove("hidden");
+
+    }
+
+
+    // ===============================
+    // MAIN SCORE
+    // ===============================
+
     document.getElementById(
         "final-score"
-    ).textContent = score;
+    ).textContent =
+        `${score}%`;
+
+
+    // ===============================
+    // RESULT BREAKDOWN
+    // ===============================
+
+    const correctCount =
+        document.getElementById("correct-count");
+
+    const incorrectCount =
+        document.getElementById("incorrect-count");
+
+    const totalCount =
+        document.getElementById("total-count");
+
+    const accuracyPercent =
+        document.getElementById("accuracy-percent");
+
+
+    if (correctCount) {
+
+        correctCount.textContent =
+            correctAnswers;
+
+    }
+
+
+    if (incorrectCount) {
+
+        incorrectCount.textContent =
+            incorrectAnswers;
+
+    }
+
+
+    if (totalCount) {
+
+        totalCount.textContent =
+            totalQuestions;
+
+    }
+
+
+    if (accuracyPercent) {
+
+        accuracyPercent.textContent =
+            `${accuracy}%`;
+
+    }
 
 
     let title;
@@ -1071,6 +1200,7 @@ function showResult() {
 
         icon =
             "⚔️";
+
     }
 
 
@@ -1080,17 +1210,36 @@ function showResult() {
 
     document.getElementById(
         "result-title"
-    ).textContent = title;
+    ).textContent =
+        title;
 
 
     document.getElementById(
         "result-description"
-    ).textContent = description;
+    ).textContent =
+        description;
 
 
-    document.getElementById(
-        "survival-time"
-    ).textContent = survival;
+    const survivalElement =
+        document.getElementById("survival-time");
+
+    if (survivalElement) {
+
+        survivalElement.textContent =
+            survival;
+
+    }
+
+
+    const knowledgeLevel =
+        document.getElementById("knowledge-level");
+
+    if (knowledgeLevel) {
+
+        knowledgeLevel.textContent =
+            survival;
+
+    }
 
 
     const resultIcon =
@@ -1110,8 +1259,11 @@ function showResult() {
 
 
     window.scrollTo({
+
         top: 0,
+
         behavior: "smooth"
+
     });
 }
 
@@ -1137,13 +1289,45 @@ function restartQuiz() {
     homeInfo.classList.remove("hidden");
 
 
+    const suggestionsCard =
+        document.getElementById("suggestions-card");
+
+    if (suggestionsCard) {
+
+        suggestionsCard.classList.add("hidden");
+
+    }
+
+
+    // Reset Submit button if present
+    if (submitButton) {
+
+        submitButton.classList.add("hidden");
+
+        submitButton.disabled = true;
+
+    }
+
+
+    nextButton.classList.remove("hidden");
+
+    nextButton.textContent =
+        "Next →";
+
+    nextButton.disabled =
+        true;
+
+
     progressBar.style.width =
         "0%";
 
 
     window.scrollTo({
+
         top: 0,
+
         behavior: "smooth"
+
     });
 }
 
@@ -1160,10 +1344,16 @@ async function shareResult() {
         ).textContent;
 
 
-    const survival =
+    const survivalElement =
         document.getElementById(
             "survival-time"
-        ).textContent;
+        );
+
+
+    const knowledgeElement =
+        document.getElementById(
+            "knowledge-level"
+        );
 
 
     const finalScore =
@@ -1172,8 +1362,18 @@ async function shareResult() {
         ).textContent;
 
 
+    const survival =
+        survivalElement
+            ? survivalElement.textContent
+            : (
+                knowledgeElement
+                    ? knowledgeElement.textContent
+                    : ""
+            );
+
+
     const shareText =
-        `⚔️ I scored ${finalScore}/100 on The 100 Quiz!\n\n` +
+        `⚔️ I scored ${finalScore} on The 100 Quiz!\n\n` +
         `${title}\n` +
         `${survival}\n\n` +
         `How well do YOU know The 100?`;
@@ -1204,8 +1404,10 @@ async function shareResult() {
         } else {
 
             await navigator.clipboard.writeText(
+
                 shareText +
                 "\n\nhttps://apocalypsequizzes.com/the-100-quiz/"
+
             );
 
 
@@ -1224,86 +1426,124 @@ async function shareResult() {
     }
 }
 
+
 // ===============================
 // GLOBAL SITE MENU
 // ===============================
 
-const menuToggle = document.getElementById("menu-toggle");
-const siteMenu = document.getElementById("site-menu");
+const menuToggle =
+    document.getElementById("menu-toggle");
+
+const siteMenu =
+    document.getElementById("site-menu");
+
 
 if (menuToggle && siteMenu) {
 
+
+    // ===============================
     // OPEN / CLOSE WITH HAMBURGER
-    menuToggle.addEventListener("click", function (event) {
+    // ===============================
 
-        event.stopPropagation();
+    menuToggle.addEventListener(
+        "click",
+        function (event) {
 
-        const isOpen =
-            menuToggle.getAttribute("aria-expanded") === "true";
-
-        siteMenu.hidden = isOpen;
-
-        menuToggle.setAttribute(
-            "aria-expanded",
-            String(!isOpen)
-        );
-
-        menuToggle.setAttribute(
-            "aria-label",
-            isOpen
-                ? "Open navigation"
-                : "Close navigation"
-        );
-
-    });
+            event.stopPropagation();
 
 
-    // CLOSE WHEN CLICKING OUTSIDE
-    document.addEventListener("click", function (event) {
+            const isOpen =
+                menuToggle.getAttribute(
+                    "aria-expanded"
+                ) === "true";
 
-        if (
-            !siteMenu.hidden &&
-            !siteMenu.contains(event.target) &&
-            !menuToggle.contains(event.target)
-        ) {
 
-            siteMenu.hidden = true;
+            siteMenu.hidden =
+                isOpen;
+
 
             menuToggle.setAttribute(
                 "aria-expanded",
-                "false"
+                String(!isOpen)
             );
+
 
             menuToggle.setAttribute(
                 "aria-label",
-                "Open navigation"
+                isOpen
+                    ? "Open navigation"
+                    : "Close navigation"
             );
 
         }
+    );
 
-    });
+
+    // ===============================
+    // CLOSE WHEN CLICKING OUTSIDE
+    // ===============================
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                !siteMenu.hidden &&
+                !siteMenu.contains(event.target) &&
+                !menuToggle.contains(event.target)
+            ) {
+
+                siteMenu.hidden =
+                    true;
 
 
-    // CLOSE AFTER CLICKING A MENU LINK
-    siteMenu.querySelectorAll("a").forEach(function (link) {
+                menuToggle.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
 
-        link.addEventListener("click", function () {
 
-            siteMenu.hidden = true;
+                menuToggle.setAttribute(
+                    "aria-label",
+                    "Open navigation"
+                );
 
-            menuToggle.setAttribute(
-                "aria-expanded",
-                "false"
-            );
+            }
 
-            menuToggle.setAttribute(
-                "aria-label",
-                "Open navigation"
+        }
+    );
+
+
+    // ===============================
+    // CLOSE AFTER MENU LINK
+    // ===============================
+
+    siteMenu
+        .querySelectorAll("a")
+        .forEach(function (link) {
+
+            link.addEventListener(
+                "click",
+                function () {
+
+                    siteMenu.hidden =
+                        true;
+
+
+                    menuToggle.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+
+                    menuToggle.setAttribute(
+                        "aria-label",
+                        "Open navigation"
+                    );
+
+                }
             );
 
         });
 
-    });
-
 }
-
